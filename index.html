@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Cricket Streaming</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0f0f23;
+            --bg-secondary: #1a1a3e;
+            --accent: #6366f1;
+            --accent-secondary: #818cf8;
+            --surface: rgba(99, 102, 241, 0.05);
+            --border: rgba(99, 102, 241, 0.2);
+            --glow: rgba(99, 102, 241, 0.3);
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --glass-bg: rgba(22, 22, 34, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, var(--accent) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, var(--bg-secondary) 0%, transparent 50%);
+            opacity: 0.05;
+            animation: floatingGradient 20s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes floatingGradient {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(120deg); }
+            66% { transform: translate(20px, -10px) rotate(240deg); }
+        }
+
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleAnimation 3s ease-out forwards;
+            pointer-events: none;
+            box-shadow: 0 0 6px var(--accent), 0 0 12px var(--accent);
+        }
+
+        @keyframes particleAnimation {
+            0% { opacity: 0; transform: scale(0) translate(0, 0); }
+            20% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(0.3) translate(var(--tx), var(--ty)); }
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to { opacity: 1; backdrop-filter: blur(10px); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .popup-content {
+            background: linear-gradient(135deg, rgba(25, 25, 45, 0.95) 0%, rgba(15, 15, 35, 0.98) 100%);
+            padding: 40px 60px;
+            border-radius: 30px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 100px var(--glow);
+            animation: slideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid var(--border);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px) scale(0.9); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        .popup-content p { font-size: 1.8rem; margin-bottom: 40px; }
+        .popup-logo { font-size: 60px; margin-bottom: 30px; color: var(--accent); animation: bounce 2s ease-in-out infinite; filter: drop-shadow(0 0 30px var(--glow)); }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        .close-popup {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%);
+            color: #fff; border: none; padding: 15px 40px; font-size: 1.1rem;
+            border-radius: 50px; cursor: pointer; transition: all 0.3s ease;
+            font-weight: 600; text-transform: uppercase;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+        .close-popup:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 15px 40px rgba(99, 102, 241, 0.6); }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 1;
+        }
+
+        .glass-container {
+            background: var(--glass-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 2px rgba(255,255,255,0.1);
+            position: relative;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            padding: 32px;
+        }
+        
+        /* SCOREBOARD STYLES */
+        .scorecard { padding: 32px; }
+        .match-header { text-align: center; margin-bottom: 24px; }
+        .live-badge { display: inline-flex; align-items: center; gap: 8px; background: #ef4444; padding: 6px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; animation: livePulse 2s ease infinite; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5); }
+        .live-badge::before { content: ''; width: 8px; height: 8px; background: #fff; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .match-title { font-size: 2rem; font-weight: 600; color: var(--accent-secondary); }
+        .match-status { font-size: 1rem; color: var(--text-dim); margin-top: 4px; }
+        .last-update { font-size: 0.875rem; color: var(--text-dim); opacity: 0.8; }
+        .score-board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 40px; align-items: start; }
+        .team-container { text-align: center; }
+        .batting-team { border-radius: 20px; padding: 24px; background: rgba(20, 20, 40, 0.4); border: 2px solid var(--accent); box-shadow: 0 0 40px var(--glow); }
+        .team-header { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
+        .team-badge { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        .batting-badge { background: linear-gradient(135deg, #4267eb 0%, #5a7ff2 100%); }
+        .bowling-badge { background: linear-gradient(135deg, #ef4444 0%, #f56565 100%); }
+        .team-name { font-size: 1.25rem; font-weight: 600; }
+        .score-display { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+        .runs { font-size: 3.5rem; font-weight: 700; line-height: 1; }
+        .wickets { font-size: 2.5rem; font-weight: 600; }
+        .wickets-separator { font-size: 2.5rem; font-weight: 300; color: var(--text-dim); }
+        .overs-display { font-size: 1rem; color: var(--text-dim); }
+        .yet-to-bat { font-size: 1.5rem; font-weight: 500; color: var(--text-dim); }
+        .center-info { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding-top: 30px; }
+        .vs-text { font-size: 2rem; font-weight: 300; color: var(--text-dim); }
+        .batsmen-details { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); text-align: left; }
+        .batsman-info { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 8px; }
+        .batsman-name { font-weight: 600; } .batsman-stats { color: var(--text-dim); }
+        
+        /* VIDEO PLAYER STYLES */
+        .language-selector { text-align: center; }
+        .lang-btn { background: var(--glass-bg); color: white; border: 1px solid var(--border); padding: 12px 30px; margin: 0 8px; font-size: 0.95rem; font-weight: 500; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px); text-transform: uppercase; letter-spacing: 1px; }
+        .lang-btn:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.2), 0 0 20px var(--glow); }
+        .lang-btn.active { background: var(--accent); border-color: var(--accent); transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 30px var(--glow); }
+        .video-player-container { padding: 0; aspect-ratio: 16/9; }
+        iframe { width: 100%; height: 100%; border: none; border-radius: 22px; }
+        .youtube-container { display: none; position: absolute; top:0; left:0; width:100%; height:100%; }
+        .youtube-overlay { z-index: 1; position: absolute; top:0; left:0; width:100%; height:100%; }
+        #youtubePlayer { position: absolute; top: -60px; left: 0; width: 100%; height: calc(100% + 120px); border: none; pointer-events: none; }
+        .hidden { display: none !important; }
+
+        @media (max-width: 900px) {
+            .score-board { grid-template-columns: 1fr; }
+            .center-info { order: -1; padding-top: 0; }
+        }
+        @media (max-width: 768px) {
+            body { padding: 15px; }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+
+    <div class="popup-overlay" id="welcomePopup">
+        <div class="popup-content">
+            <div class="popup-logo"><i class="fas fa-play-circle"></i></div>
+            <p>Made by Gajju</p>
+            <button class="close-popup" onclick="closePopup()"><span>Enter</span></button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Score Display Component -->
+        <div class="glass-container scorecard" id="scorecard">
+            <div class="match-header">
+                <span class="live-badge" id="liveBadge">LIVE</span>
+                <h1 class="match-title" id="matchTitle">Loading match...</h1>
+                <p class="match-status" id="matchStatus">Connecting to server...</p>
+                <p class="last-update" id="lastUpdate">Updated: --:--:--</p>
+            </div>
+            <div class="score-board">
+                <div class="team-container batting-team">
+                    <div class="team-header">
+                        <div class="team-badge batting-badge" id="battingTeamBadge">T1</div>
+                        <span class="team-name" id="battingTeamName">Team 1</span>
+                    </div>
+                    <div class="score-section">
+                        <div class="score-display">
+                            <span class="runs" id="battingTeamRuns">0</span><span class="wickets-separator">/</span><span class="wickets" id="battingTeamWickets">0</span>
+                        </div>
+                        <div class="overs-display" id="battingTeamOvers">(0.0 overs)</div>
+                    </div>
+                    <div class="batsmen-details hidden" id="battingTeamBatsmen">
+                        <div class="batsman-info" id="batsman1"><span class="batsman-name">Batsman 1</span><span class="batsman-stats">0 (0) • SR: 0.00</span></div>
+                        <div class="batsman-info" id="batsman2"><span class="batsman-name">Batsman 2</span><span class="batsman-stats">0 (0) • SR: 0.00</span></div>
+                    </div>
+                </div>
+                <div class="center-info"><div class="vs-text">VS</div></div>
+                <div class="team-container">
+                    <div class="team-header">
+                        <div class="team-badge bowling-badge" id="bowlingTeamBadge">T2</div>
+                        <span class="team-name" id="bowlingTeamName">Team 2</span>
+                    </div>
+                    <div class="score-section">
+                        <div class="score-display" id="bowlingTeamScore"><span class="yet-to-bat">Yet to bat</span></div>
+                        <div class="overs-display" id="bowlingTeamOvers">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Player Component -->
+        <div class="language-selector">
+            <button class="lang-btn active" onclick="changeLanguage('english', this)"><i class="fas fa-language"></i> English</button>
+            <button class="lang-btn" onclick="changeLanguage('hindi', this)"><i class="fas fa-language"></i> हिन्दी</button>
+            <button class="lang-btn" onclick="changeLanguage('regional', this)"><i class="fas fa-language"></i> Regional</button>
+        </div>
+        <div class="glass-container video-player-container">
+            <iframe id="playerIframe" src="https://tnt2-cricstreaming.pages.dev/" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+            <div class="youtube-container" id="youtubeContainer">
+                <iframe id="youtubePlayer" src="" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                <div class="youtube-overlay"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const config = {
+            backendUrl: '', 
+        };
+
+        // --- PARTICLE AND POPUP LOGIC ---
+        class ParticleSystem {
+            constructor() { this.container = document.getElementById('particles'); this.particleCount = 0; this.maxParticles = 50; this.init(); }
+            init() { document.addEventListener('mousemove', e => { if (Math.random() > 0.7) this.createParticle(e.clientX, e.clientY); }); }
+            createParticle(x, y) { if (this.particleCount >= this.maxParticles) return; this.particleCount++; const p = document.createElement('div'); p.className = 'particle'; p.style.left = x + 'px'; p.style.top = y + 'px'; const angle = Math.random() * Math.PI * 2; const dist = Math.random() * 100 + 50; p.style.setProperty('--tx', Math.cos(angle) * dist + 'px'); p.style.setProperty('--ty', Math.sin(angle) * dist + 'px'); this.container.appendChild(p); setTimeout(() => { p.remove(); this.particleCount--; }, 3000); }
+        }
+        function closePopup() { const p = document.getElementById('welcomePopup'); p.style.animation = 'fadeOut 0.5s ease'; setTimeout(() => p.style.display = 'none', 500); }
+        new ParticleSystem();
+
+        // --- VIDEO PLAYER LOGIC ---
+        const streamSources = {
+            english: 'https://tnt2-cricstreaming.pages.dev/',
+            hindi: 'https://tnt2-cricstreaming.pages.dev/',
+            regional: 'https://www.youtube.com/embed/GoHDolSJxIQ?autoplay=1&controls=0&modestbranding=1&showinfo=0&rel=0&iv_load_policy=3&loop=1'
+        };
+        function changeLanguage(language, button) {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const mainPlayer = document.getElementById('playerIframe');
+            const ytContainer = document.getElementById('youtubeContainer');
+            const ytPlayer = document.getElementById('youtubePlayer');
+            const newUrl = streamSources[language];
+            if (language === 'regional') {
+                mainPlayer.style.display = 'none';
+                ytContainer.style.display = 'block';
+                if (ytPlayer.src !== newUrl) ytPlayer.src = newUrl;
+            } else {
+                mainPlayer.style.display = 'block';
+                ytContainer.style.display = 'none';
+                ytPlayer.src = '';
+                if (mainPlayer.src !== newUrl) mainPlayer.src = newUrl;
+            }
+        }
+
+        // --- SCOREBOARD LOGIC ---
+        const CricketScoreModule = {
+            config: { backendUrl: config.backendUrl, updateInterval: null, },
+            async fetchCurrentScore() {
+                try {
+                    const response = await fetch(`${this.config.backendUrl}/api/current-score`);
+                    if (!response.ok) { 
+                        if(response.status === 400) {
+                             document.getElementById('matchStatus').textContent = "No match URL set. Set one via the backend.";
+                        } else {
+                            throw new Error(`API Error: ${response.statusText}`);
+                        }
+                        return;
+                    }
+                    const data = await response.json(); this.updateDisplay(data);
+                } catch (error) { console.error('Error fetching scores:', error); document.getElementById('matchStatus').textContent = "Connection Error"; }
+            },
+            updateDisplay(data) {
+                if(!data || Object.keys(data).length === 0 || !data.matchState) {
+                    document.getElementById('matchStatus').textContent = "Waiting for data...";
+                    return;
+                }
+                if (data.matchState === 'ENDED' || data.matchState === 'LIVE') this.displayLive(data);
+                if (data.matchState === 'ENDED') { document.getElementById('liveBadge').classList.add('hidden'); document.getElementById('matchStatus').textContent = data.result; this.stopUpdates(); }
+            },
+            displayLive(data) {
+                document.getElementById('matchTitle').textContent = data.shortTitle || `${data.team1_name} vs ${data.team2_name}`;
+                document.getElementById('matchStatus').textContent = data.update || 'Live Match';
+                document.getElementById('lastUpdate').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+                const batTeam = { name: data.team1_name, score: data.team1_score, wickets: data.team1_wickets, overs: data.team1_overs };
+                const bowlTeam = { name: data.team2_name, score: data.team2_score, wickets: data.team2_wickets, overs: data.team2_overs };
+                document.getElementById('battingTeamBadge').textContent = batTeam.name ? batTeam.name.substring(0, 2).toUpperCase() : 'T1';
+                document.getElementById('battingTeamName').textContent = batTeam.name;
+                document.getElementById('battingTeamRuns').textContent = batTeam.score;
+                document.getElementById('battingTeamWickets').textContent = batTeam.wickets;
+                document.getElementById('battingTeamOvers').textContent = `(${batTeam.overs} overs)`;
+                document.getElementById('bowlingTeamBadge').textContent = bowlTeam.name ? bowlTeam.name.substring(0, 2).toUpperCase() : 'T2';
+                document.getElementById('bowlingTeamName').textContent = bowlTeam.name;
+                const bowlScoreDiv = document.getElementById('bowlingTeamScore');
+                if (data.team2_status !== 'Yet to bat') {
+                    bowlScoreDiv.innerHTML = `<span class="runs">${bowlTeam.score}</span><span class="wickets-separator">/</span><span class="wickets">${bowlTeam.wickets}</span>`;
+                    document.getElementById('bowlingTeamOvers').textContent = `(${bowlTeam.overs} overs)`;
+                } else {
+                    bowlScoreDiv.innerHTML = '<span class="yet-to-bat">Yet to bat</span>';
+                    document.getElementById('bowlingTeamOvers').textContent = '-';
+                }
+                const batsmenContainer = document.getElementById('battingTeamBatsmen');
+                if (data.batterone && data.batterone !== 'Batsman 1') {
+                    batsmenContainer.classList.remove('hidden');
+                    const b1 = document.getElementById('batsman1');
+                    b1.querySelector('.batsman-name').textContent = data.batterone;
+                    b1.querySelector('.batsman-stats').textContent = `${data.batsmanonerun} (${data.batsmanoneball.replace(/[()]/g, '')}) • SR: ${data.batsmanonesr}`;
+                    const b2 = document.getElementById('batsman2');
+                    if (data.battertwo && data.battertwo !== 'Batsman 2') {
+                        b2.classList.remove('hidden');
+                        b2.querySelector('.batsman-name').textContent = data.battertwo;
+                        b2.querySelector('.batsman-stats').textContent = `${data.batsmantworun} (${data.batsmantwoball.replace(/[()]/g, '')}) • SR: ${data.batsmantwosr}`;
+                    } else { b2.classList.add('hidden'); }
+                } else { batsmenContainer.classList.add('hidden'); }
+            },
+            startLiveUpdates() { if (this.config.updateInterval) return; this.fetchCurrentScore(); this.config.updateInterval = setInterval(() => this.fetchCurrentScore(), 15000); },
+            stopUpdates() { if (this.config.updateInterval) { clearInterval(this.config.updateInterval); this.config.updateInterval = null; } }
+        };
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => { 
+            if (!CricketScoreModule.config.backendUrl) {
+                if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+                    CricketScoreModule.config.backendUrl = 'http://localhost:5000';
+                }
+            }
+            CricketScoreModule.startLiveUpdates(); 
+        });
+
+         document.addEventListener("contextmenu", e => e.preventDefault());
+         document.onkeydown = e => {
+             if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
+                 e.preventDefault();
+             }
+         };
+    </script>
+</body>
+</html>
+
