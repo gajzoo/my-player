@@ -10,4 +10,4 @@ ENV/
 .idea/
 *.log
 .DS_Store
-combined.html
+index.html
