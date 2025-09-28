@@ -15,10 +15,10 @@ cors_config = {
     "origins": [
         "http://localhost:*",
         "http://127.0.0.1:*",
-        "https://my-player-vrse.onrender.com/",
+        "https://gajju-trial1-u4nr.onrender.com",
         "https://*.vercel.app",
         "https://*.netlify.app",
-        "https://gajju-trial2.pages.dev/",
+        "https://gajju-trial2.pages.dev",
         "file://",
     ],
     "methods": ["GET", "POST", "OPTIONS"],
@@ -344,6 +344,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print(f"\n\n{Colors.CYAN}Server stopped. Goodbye! 👋{Colors.ENDC}")
         sys.exit(0)
+
 
 
 
