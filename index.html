@@ -189,6 +189,13 @@
         .batsman-info { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 8px; }
         .batsman-name { font-weight: 600; } .batsman-stats { color: var(--text-dim); }
         
+        /* NEW STYLES FOR TARGET SECTION */
+        .target-section { text-align: center; }
+        .target-label { font-size: 1.1rem; color: var(--text-dim); margin-bottom: 12px; font-weight: 500;}
+        .progress-bar-container { width: 240px; height: 6px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; overflow: hidden; margin: 0 auto 12px; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: 3px; transition: width 0.5s ease-in-out; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .balls-remaining { font-size: 0.875rem; color: var(--text-dim); opacity: 0.8; }
+        
         /* VIDEO PLAYER STYLES */
         .language-selector { text-align: center; }
         .lang-btn { background: var(--glass-bg); color: white; border: 1px solid var(--border); padding: 12px 30px; margin: 0 8px; font-size: 0.95rem; font-weight: 500; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px); text-transform: uppercase; letter-spacing: 1px; }
@@ -248,7 +255,17 @@
                         <div class="batsman-info" id="batsman2"><span class="batsman-name">Batsman 2</span><span class="batsman-stats">0 (0) • SR: 0.00</span></div>
                     </div>
                 </div>
-                <div class="center-info"><div class="vs-text">VS</div></div>
+                <div class="center-info">
+                    <div class="vs-text">VS</div>
+                    <!-- NEW TARGET SECTION HTML -->
+                    <div class="target-section hidden" id="targetSection">
+                        <div class="target-label">Target: <span id="targetScore">0</span></div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+                        </div>
+                        <div class="balls-remaining" id="ballsRemaining">0 balls remaining</div>
+                    </div>
+                </div>
                 <div class="team-container">
                     <div class="team-header">
                         <div class="team-badge bowling-badge" id="bowlingTeamBadge">T2</div>
@@ -356,12 +373,35 @@
                 document.getElementById('bowlingTeamBadge').textContent = bowlTeam.name ? bowlTeam.name.substring(0, 2).toUpperCase() : 'T2';
                 document.getElementById('bowlingTeamName').textContent = bowlTeam.name;
                 const bowlScoreDiv = document.getElementById('bowlingTeamScore');
-                if (data.team2_status !== 'Yet to bat') {
+                const targetSection = document.getElementById('targetSection');
+
+                if (data.team2_status !== 'Yet to bat' && bowlTeam.score > 0) {
                     bowlScoreDiv.innerHTML = `<span class="runs">${bowlTeam.score}</span><span class="wickets-separator">/</span><span class="wickets">${bowlTeam.wickets}</span>`;
                     document.getElementById('bowlingTeamOvers').textContent = `(${bowlTeam.overs} overs)`;
+                    
+                    // --- TARGET LOGIC ---
+                    targetSection.classList.remove('hidden');
+                    const target = parseInt(bowlTeam.score) + 1;
+                    const currentScore = parseInt(batTeam.score);
+
+                    const totalOvers = parseFloat(bowlTeam.overs);
+                    const totalBalls = Math.floor(totalOvers) * 6 + Math.round((totalOvers % 1) * 10);
+                    
+                    const oversBowledNum = parseFloat(batTeam.overs);
+                    const ballsBowled = Math.floor(oversBowledNum) * 6 + Math.round((oversBowledNum % 1) * 10);
+                    
+                    const ballsLeft = totalBalls - ballsBowled;
+
+                    document.getElementById('targetScore').textContent = target;
+                    document.getElementById('ballsRemaining').textContent = `${ballsLeft >= 0 ? ballsLeft : 0} balls remaining`;
+                    
+                    const progress = target > 0 ? (currentScore / target) * 100 : 0;
+                    document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
+
                 } else {
                     bowlScoreDiv.innerHTML = '<span class="yet-to-bat">Yet to bat</span>';
                     document.getElementById('bowlingTeamOvers').textContent = '-';
+                    targetSection.classList.add('hidden');
                 }
                 const batsmenContainer = document.getElementById('battingTeamBatsmen');
                 if (data.batterone && data.batterone !== 'Batsman 1') {
@@ -400,13 +440,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
