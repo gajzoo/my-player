@@ -10,12 +10,13 @@ import os
 import sys
 
 app = Flask(__name__)
-# Enhanced CORS configuration
+# CORRECTED CORS CONFIGURATION
+# Using a wildcard for onrender.com makes it more robust for deployment.
 cors_config = {
     "origins": [
         "http://localhost:*",
         "http://127.0.0.1:*",
-        "https://my-player-vrse.onrender.com/",
+        "https://*.onrender.com", # More reliable wildcard for Render deployments
         "https://*.vercel.app",
         "https://*.netlify.app",
         "https://gajju-trial2.pages.dev/",
@@ -40,27 +41,9 @@ CORS(app, resources={
     r"/live": cors_config
 })
 
-# Add after_request handler for additional CORS headers
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin')
-    
-    # List of allowed origins
-    allowed_origins = [
-        'http://localhost:3000',
-        'http://localhost:5000',
-        'http://localhost:8080',
-        'http://127.0.0.1:5000',
-    ]
-    
-    # If origin is in allowed list or in development
-    if origin in allowed_origins or (app.debug and origin and origin.startswith('http://localhost')):
-        response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept'
-    
-    return response
+# REMOVED @app.after_request handler.
+# This function was redundant and likely causing a conflict with the flask-cors extension,
+# especially in a deployed environment. The CORS() setup above is the correct way to handle this.
 
 # Global variables
 CURRENT_MATCH_URL = None
@@ -344,10 +327,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print(f"\n\n{Colors.CYAN}Server stopped. Goodbye! 👋{Colors.ENDC}")
         sys.exit(0)
-
-
-
-
-
-
-
