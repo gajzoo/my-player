@@ -11,12 +11,11 @@ import sys
 
 app = Flask(__name__)
 # CORRECTED CORS CONFIGURATION
-# Using a wildcard for onrender.com makes it more robust for deployment.
 cors_config = {
     "origins": [
         "http://localhost:*",
         "http://127.0.0.1:*",
-        "https://*.onrender.com", # More reliable wildcard for Render deployments
+        "https://*.onrender.com", 
         "https://*.vercel.app",
         "https://*.netlify.app",
         "https://gajju-trial2.pages.dev/",
@@ -34,18 +33,14 @@ cors_config = {
     "max_age": 3600
 }
 
-# Apply CORS with specific configuration
 CORS(app, resources={
     r"/api/*": cors_config,
     r"/": cors_config,
     r"/live": cors_config
 })
 
-# REMOVED @app.after_request handler.
-# This function was redundant and likely causing a conflict with the flask-cors extension,
-# especially in a deployed environment. The CORS() setup above is the correct way to handle this.
 
-# Global variables
+
 CURRENT_MATCH_URL = None
 MATCH_DATA = {}
 AUTO_UPDATE = True
@@ -327,3 +322,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print(f"\n\n{Colors.CYAN}Server stopped. Goodbye! 👋{Colors.ENDC}")
         sys.exit(0)
+
